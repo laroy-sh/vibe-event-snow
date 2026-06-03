@@ -1,0 +1,51 @@
+command:
+  only-player: "&cOnly a player can use this command."
+  no-permission: "&cYou do not have permission to use this command."
+  invalid-position: "&eSpecify pos1 or pos2."
+  no-target-block: "&eLook at a block within 5 blocks to save the position."
+  invalid-target-location: "&cFailed to determine a valid block position."
+  position-saved: "&aPosition {position} for {zone} has been saved."
+  zone-saved: "&aZone {zone} has been saved successfully!"
+  zone-save-failed: "&cFailed to save the zone. Check the selected points."
+  spawn-saved: "&aSpawn point for team {team} has been saved successfully!"
+  spawn-save-failed: "&cFailed to save the spawn point."
+  event-spawn-saved: "&aSnow event teleport point has been saved!"
+  event-spawn-missing: "&cSnow event teleport point is not configured yet."
+  event-spawn-teleported: "&aYou have been teleported to the snow event."
+  event-spawn-cooldown: "&eWait {seconds} sec. before teleporting again."
+  usage:
+    1: "&e/event snow"
+    2: "&e/event snow spawn"
+    3: "&e/event snow lobby_red <pos1|pos2>"
+    4: "&e/event snow lobby_blue <pos1|pos2>"
+    5: "&e/event snow zone_red <pos1|pos2>"
+    6: "&e/event snow zone_blue <pos1|pos2>"
+    7: "&e/event snow setspawn_red"
+    8: "&e/event snow setspawn_blue"
+
+bossbar:
+  lobby-countdown: "&fBattle starts in: &b{seconds} &fsec"
+  match-status: "&cRed: {red_lives} lives &7| &9Blue: {blue_lives} lives &7| &fTime: &b{time}"
+
+match:
+  enemy-territory:
+    title: "&cYou are in enemy territory!"
+    subtitle: "&7Return back or you will lose lives."
+  victory: "&6Team {team} wins! Winners: &f{winners}"
+  result:
+    - ""
+    - "&b&l❄ SNOW BATTLE FINISHED ❄"
+    - "&fWinning team: &e{team}"
+    - "&fWinners: &a{winners}"
+    - "&cRed lives: {red_lives} &7| &9Blue lives: {blue_lives}"
+    - ""
+  deserter: "&cPlayer {player} deserted the match! Their lives were reset."
+  left-arena: "&cPlayer {player} left the snow battle!"
+  world-left: "&cPlayer {player} left the event world! The match is ending."
+  life-lost: "&ePlayer {player} lost a life! Remaining: &c{lives}"
+  eliminated: "&cPlayer {player} is out of lives!"
+
+team:
+  red: "Red"
+  blue: "Blue"
+  none: "None"

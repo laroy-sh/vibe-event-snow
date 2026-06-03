@@ -1,0 +1,16 @@
+language: ru
+match-duration-seconds: 300
+
+lobby-zones:
+  red: {}
+  blue: {}
+
+game-zones:
+  red: {}
+  blue: {}
+
+event-spawn: {}
+
+spawn-points:
+  red: {}
+  blue: {}

@@ -1,0 +1,13 @@
+name: VibeSnowEvent
+version: "1.0"
+main: ru.server.snowevent.SnowEventPlugin
+api-version: "1.21"
+commands:
+  eventsnow:
+    aliases:
+      - event
+    usage: /event snow [spawn|lobby_red|lobby_blue|zone_red|zone_blue|setspawn_red|setspawn_blue]
+permissions:
+  snowevent.admin:
+    description: Allows managing SnowEvent zones and spawn points.
+    default: op

@@ -1,0 +1,51 @@
+command:
+  only-player: "&cЭту команду может использовать только игрок."
+  no-permission: "&cУ вас нет прав для использования этой команды."
+  invalid-position: "&eУкажите pos1 или pos2."
+  no-target-block: "&eСмотрите на блок в радиусе 5 блоков, чтобы сохранить позицию."
+  invalid-target-location: "&cНе удалось определить корректную позицию блока."
+  position-saved: "&aТочка {position} для {zone} сохранена."
+  zone-saved: "&aЗона {zone} успешно сохранена!"
+  zone-save-failed: "&cНе удалось сохранить зону. Проверьте выбранные точки."
+  spawn-saved: "&aТочка спавна команды {team} успешно сохранена!"
+  spawn-save-failed: "&cНе удалось сохранить точку спавна."
+  event-spawn-saved: "&aТочка телепорта на снежный ивент сохранена!"
+  event-spawn-missing: "&cТочка телепорта на снежный ивент еще не настроена."
+  event-spawn-teleported: "&aВы телепортированы на снежный ивент."
+  event-spawn-cooldown: "&eПодождите {seconds} сек. перед повторной телепортацией."
+  usage:
+    1: "&e/event snow"
+    2: "&e/event snow spawn"
+    3: "&e/event snow lobby_red <pos1|pos2>"
+    4: "&e/event snow lobby_blue <pos1|pos2>"
+    5: "&e/event snow zone_red <pos1|pos2>"
+    6: "&e/event snow zone_blue <pos1|pos2>"
+    7: "&e/event snow setspawn_red"
+    8: "&e/event snow setspawn_blue"
+
+bossbar:
+  lobby-countdown: "&fДо старта битвы: &b{seconds} &fсек"
+  match-status: "&cКрасные: {red_lives} жизней &7| &9Синие: {blue_lives} жизней &7| &fВремя: &b{time}"
+
+match:
+  enemy-territory:
+    title: "&cВы на чужой территории!"
+    subtitle: "&7Вернитесь обратно, или потеряете жизни."
+  victory: "&6Победа команды {team}&6! Победители: &f{winners}"
+  result:
+    - ""
+    - "&b&l❄ СНЕЖНАЯ БИТВА ЗАВЕРШЕНА ❄"
+    - "&fПобедила команда: &e{team}"
+    - "&fПобедители: &a{winners}"
+    - "&cКрасные жизни: {red_lives} &7| &9Синие жизни: {blue_lives}"
+    - ""
+  deserter: "&cИгрок {player} дезертировал! Его жизни обнулены."
+  left-arena: "&cИгрок {player} выбыл из снежной битвы!"
+  world-left: "&cИгрок {player} покинул мир ивента! Матч завершается."
+  life-lost: "&eИгрок {player} потерял жизнь! Осталось: &c{lives}"
+  eliminated: "&cИгрок {player} выбыл без жизней!"
+
+team:
+  red: "Красные"
+  blue: "Синие"
+  none: "Нет"
