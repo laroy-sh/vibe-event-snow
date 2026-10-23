@@ -21,6 +21,9 @@ import ru.server.snowevent.data.CuboidZone;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -878,6 +881,7 @@ public final class GameManager {
         }
 
         snapshot.restore(player);
+        player.saveData();
         inventorySnapshots.remove(playerId);
         saveSnapshots();
     }
@@ -907,20 +911,20 @@ public final class GameManager {
     }
 
     private void saveSnapshots() {
-        if (inventorySnapshots.isEmpty()) {
-            if (snapshotFile.exists() && !snapshotFile.delete()) {
-                plugin.getLogger().warning("Failed to delete " + SNAPSHOT_FILE_NAME + ".");
-            }
-            return;
-        }
-
         YamlConfiguration yaml = new YamlConfiguration();
         for (Map.Entry<UUID, InventorySnapshot> entry : inventorySnapshots.entrySet()) {
             entry.getValue().save(yaml.createSection(entry.getKey().toString()));
         }
 
+        File tempFile = new File(snapshotFile.getParentFile(), SNAPSHOT_FILE_NAME + ".tmp");
         try {
-            yaml.save(snapshotFile);
+            yaml.save(tempFile);
+            try {
+                Files.move(tempFile.toPath(), snapshotFile.toPath(),
+                        StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException exception) {
+                Files.move(tempFile.toPath(), snapshotFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException exception) {
             plugin.getLogger().severe("Failed to save inventory snapshots: " + exception.getMessage());
         }
