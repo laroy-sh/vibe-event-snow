@@ -34,6 +34,7 @@ public final class LobbyListener implements Listener {
         if (event == null || event.getPlayer() == null) {
             return;
         }
+        gameManager.restorePendingSnapshot(event.getPlayer());
         gameManager.clearEventRespawnIfNeeded(event.getPlayer());
     }
 
@@ -105,6 +106,7 @@ public final class LobbyListener implements Listener {
     private void clearOnlineEventRespawns() {
         Bukkit.getScheduler().runTask(plugin, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
+                gameManager.restorePendingSnapshot(player);
                 gameManager.clearEventRespawnIfNeeded(player);
             }
         });

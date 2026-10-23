@@ -6,9 +6,12 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -16,7 +19,10 @@ import ru.server.snowevent.ConfigManager;
 import ru.server.snowevent.SnowEventPlugin;
 import ru.server.snowevent.data.CuboidZone;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -39,10 +45,12 @@ public final class GameManager {
     private static final int STARTING_LIVES = 3;
     private static final int STARTING_SNOWBALL_AMOUNT = 64;
     private static final long MATCH_END_TELEPORT_DELAY_TICKS = 5L * 20L;
+    private static final String SNAPSHOT_FILE_NAME = "inventory-snapshots.yml";
 
     private final SnowEventPlugin plugin;
     private final ConfigManager configManager;
     private final MessageManager messageManager;
+    private final File snapshotFile;
 
     private State state = State.INACTIVE;
     private final List<UUID> preRed = new ArrayList<>();
@@ -65,6 +73,8 @@ public final class GameManager {
         this.plugin = plugin;
         this.configManager = plugin.getConfigManager();
         this.messageManager = plugin.getMessageManager();
+        this.snapshotFile = new File(plugin.getDataFolder(), SNAPSHOT_FILE_NAME);
+        loadSnapshots();
         validateState();
     }
 
@@ -232,8 +242,8 @@ public final class GameManager {
         boolean changed = preRed.remove(playerId);
         changed |= preBlue.remove(playerId);
 
-        if (state == State.MATCH && isMatchParticipant(playerId)) {
-            restorePlayerSnapshot(playerId, playerId == null ? null : Bukkit.getPlayer(playerId));
+        if ((state == State.MATCH || state == State.ENDING) && isMatchParticipant(playerId)) {
+            restorePlayerSnapshot(playerId, Bukkit.getPlayer(playerId));
             matchRed.remove(playerId);
             matchBlue.remove(playerId);
             playerLives.remove(playerId);
@@ -280,9 +290,19 @@ public final class GameManager {
             return;
         }
 
-        playerLives.put(playerId, 0);
+        restorePlayerSnapshot(playerId, player);
+        matchRed.remove(playerId);
+        matchBlue.remove(playerId);
+        playerLives.remove(playerId);
         updateMatchBossBar();
-        stopMatchByScore();
+        checkMatchEnd();
+    }
+
+    public synchronized void restorePendingSnapshot(Player player) {
+        if (player == null || isMatchParticipant(player.getUniqueId())) {
+            return;
+        }
+        restorePlayerSnapshot(player.getUniqueId(), player);
     }
 
     public synchronized void checkMatchEnd() {
@@ -793,7 +813,6 @@ public final class GameManager {
         playerLives.clear();
         hitStats.clear();
         headshotStats.clear();
-        inventorySnapshots.clear();
     }
 
     private void savePlayerSnapshot(Player player) {
@@ -802,6 +821,7 @@ public final class GameManager {
         }
 
         inventorySnapshots.putIfAbsent(player.getUniqueId(), InventorySnapshot.capture(player, getSafeRespawnLocation(player)));
+        saveSnapshots();
     }
 
     private Location getSafeRespawnLocation(Player player) {
@@ -859,6 +879,51 @@ public final class GameManager {
 
         snapshot.restore(player);
         inventorySnapshots.remove(playerId);
+        saveSnapshots();
+    }
+
+    private void loadSnapshots() {
+        if (!snapshotFile.exists()) {
+            return;
+        }
+
+        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(snapshotFile);
+        for (String key : yaml.getKeys(false)) {
+            ConfigurationSection section = yaml.getConfigurationSection(key);
+            if (section == null) {
+                continue;
+            }
+            try {
+                inventorySnapshots.put(UUID.fromString(key), InventorySnapshot.load(section));
+            } catch (IllegalArgumentException exception) {
+                plugin.getLogger().warning("Skipping invalid inventory snapshot entry: " + key);
+            }
+        }
+
+        if (!inventorySnapshots.isEmpty()) {
+            plugin.getLogger().info("Loaded " + inventorySnapshots.size()
+                    + " pending inventory snapshot(s); they will be restored when those players join.");
+        }
+    }
+
+    private void saveSnapshots() {
+        if (inventorySnapshots.isEmpty()) {
+            if (snapshotFile.exists() && !snapshotFile.delete()) {
+                plugin.getLogger().warning("Failed to delete " + SNAPSHOT_FILE_NAME + ".");
+            }
+            return;
+        }
+
+        YamlConfiguration yaml = new YamlConfiguration();
+        for (Map.Entry<UUID, InventorySnapshot> entry : inventorySnapshots.entrySet()) {
+            entry.getValue().save(yaml.createSection(entry.getKey().toString()));
+        }
+
+        try {
+            yaml.save(snapshotFile);
+        } catch (IOException exception) {
+            plugin.getLogger().severe("Failed to save inventory snapshots: " + exception.getMessage());
+        }
     }
 
     private static ItemStack[] cloneItems(ItemStack[] items) {
@@ -889,6 +954,54 @@ public final class GameManager {
                     player.getGameMode(),
                     respawnLocation == null ? null : respawnLocation.clone()
             );
+        }
+
+        private static InventorySnapshot load(ConfigurationSection section) {
+            GameMode gameMode = GameMode.valueOf(section.getString("game-mode", GameMode.SURVIVAL.name()));
+            Location respawnLocation = null;
+            World world = Bukkit.getWorld(section.getString("respawn.world", ""));
+            if (world != null) {
+                respawnLocation = new Location(
+                        world,
+                        section.getDouble("respawn.x"),
+                        section.getDouble("respawn.y"),
+                        section.getDouble("respawn.z"),
+                        (float) section.getDouble("respawn.yaw"),
+                        (float) section.getDouble("respawn.pitch")
+                );
+            }
+
+            return new InventorySnapshot(
+                    readItems(section, "storage"),
+                    readItems(section, "armor"),
+                    readItems(section, "extra"),
+                    gameMode,
+                    respawnLocation
+            );
+        }
+
+        private void save(ConfigurationSection section) {
+            section.set("storage", Arrays.asList(storageContents));
+            section.set("armor", Arrays.asList(armorContents));
+            section.set("extra", Arrays.asList(extraContents));
+            section.set("game-mode", gameMode.name());
+            if (respawnLocation != null && respawnLocation.getWorld() != null) {
+                section.set("respawn.world", respawnLocation.getWorld().getName());
+                section.set("respawn.x", respawnLocation.getX());
+                section.set("respawn.y", respawnLocation.getY());
+                section.set("respawn.z", respawnLocation.getZ());
+                section.set("respawn.yaw", respawnLocation.getYaw());
+                section.set("respawn.pitch", respawnLocation.getPitch());
+            }
+        }
+
+        private static ItemStack[] readItems(ConfigurationSection section, String path) {
+            List<?> values = section.getList(path, List.of());
+            ItemStack[] items = new ItemStack[values.size()];
+            for (int index = 0; index < values.size(); index++) {
+                items[index] = values.get(index) instanceof ItemStack item ? item : null;
+            }
+            return items;
         }
 
         private void restore(Player player) {
